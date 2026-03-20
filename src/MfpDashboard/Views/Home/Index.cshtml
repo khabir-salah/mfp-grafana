@@ -1,0 +1,209 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var stats = ViewBag.Stats as MfpDashboard.Models.DashboardStats;
+    var imports = ViewBag.RecentImports as List<MfpDashboard.Services.ImportLogEntry>;
+    var grafanaUrl = ViewBag.GrafanaUrl as string ?? "http://localhost:3000";
+}
+
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <div class="hero-badge">FITNESS ANALYTICS</div>
+        <h1 class="hero-title">Your Health<br><em>Data Hub</em></h1>
+        <p class="hero-sub">Upload MyFitnessPal exports — visualize calories, macros, weight trends and exercise stats in real-time Grafana dashboards.</p>
+        <a href="#upload-section" class="hero-cta">Upload CSV →</a>
+    </div>
+    <div class="hero-graphic">
+        <div class="pulse-ring r1"></div>
+        <div class="pulse-ring r2"></div>
+        <div class="pulse-ring r3"></div>
+        <div class="hero-icon">◈</div>
+    </div>
+</section>
+
+<!-- Stats Row -->
+<section class="stats-row">
+    <div class="stat-card">
+        <div class="stat-label">Days Tracked</div>
+        <div class="stat-value">@(stats?.TotalDaysTracked ?? 0)</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Daily Calories</div>
+        <div class="stat-value">@(stats?.AverageDailyCalories.ToString("N0") ?? "—")</div>
+        <div class="stat-unit">kcal</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Avg Protein</div>
+        <div class="stat-value">@(stats?.AverageProtein.ToString("N0") ?? "—")</div>
+        <div class="stat-unit">g/day</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Food Entries</div>
+        <div class="stat-value">@(stats?.TotalFoodEntries.ToString("N0") ?? "0")</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Exercise Sessions</div>
+        <div class="stat-value">@(stats?.TotalExerciseEntries.ToString("N0") ?? "0")</div>
+    </div>
+    @if (stats?.CurrentWeight.HasValue == true)
+    {
+        <div class="stat-card @(stats.WeightChange.HasValue && stats.WeightChange < 0 ? "stat-positive" : "")">
+            <div class="stat-label">Current Weight</div>
+            <div class="stat-value">@stats.CurrentWeight.Value.ToString("N1")</div>
+            <div class="stat-unit">lbs
+                @if (stats.WeightChange.HasValue)
+                {
+                    <span class="stat-change @(stats.WeightChange < 0 ? "change-down" : "change-up")">
+                        (@(stats.WeightChange > 0 ? "+" : "")@stats.WeightChange.Value.ToString("N1"))
+                    </span>
+                }
+            </div>
+        </div>
+    }
+</section>
+
+<!-- Upload Section -->
+<section class="upload-section" id="upload-section">
+    <div class="section-header">
+        <h2>Upload MFP Export</h2>
+        <p>Export your data from MyFitnessPal (Settings → Export Data) and upload the CSV files here.</p>
+    </div>
+
+    <div class="upload-grid">
+        <div class="upload-card" id="upload-zone">
+            <div class="upload-icon">↑</div>
+            <div class="upload-title">Drop CSV file here</div>
+            <div class="upload-sub">or click to browse</div>
+            <div class="file-types">
+                <span class="file-type">Food Log</span>
+                <span class="file-type">Exercise</span>
+                <span class="file-type">Measurements</span>
+                <span class="file-type">Nutrition</span>
+            </div>
+            <input type="file" id="csv-input" accept=".csv" hidden />
+        </div>
+
+        <div class="upload-info">
+            <h3>Supported Formats</h3>
+            <ul class="format-list">
+                <li>
+                    <span class="format-icon">🍎</span>
+                    <div>
+                        <strong>Food Log CSV</strong>
+                        <span>Daily food entries with macros</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="format-icon">🏋️</span>
+                    <div>
+                        <strong>Exercise Log CSV</strong>
+                        <span>Workouts and calories burned</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="format-icon">⚖️</span>
+                    <div>
+                        <strong>Measurements CSV</strong>
+                        <span>Weight and body measurements</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="format-icon">📊</span>
+                    <div>
+                        <strong>Nutrition Summary CSV</strong>
+                        <span>Daily totals vs goals</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="upload-progress" class="upload-progress hidden">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-label" id="progress-label">Uploading...</div>
+    </div>
+
+    <div id="upload-result" class="upload-result hidden"></div>
+</section>
+
+<!-- Grafana Dashboards -->
+<section class="dashboards-section">
+    <div class="section-header">
+        <h2>Grafana Dashboards</h2>
+        <p>Live charts powered by Grafana, connected directly to your PostgreSQL data.</p>
+    </div>
+
+    <div class="dashboard-cards">
+        <a href="@grafanaUrl/d/mfp-overview" target="_blank" class="dashboard-card">
+            <div class="dc-icon">📊</div>
+            <div class="dc-title">Overview</div>
+            <div class="dc-desc">Calories consumed vs goal, net balance daily</div>
+            <div class="dc-arrow">→</div>
+        </a>
+        <a href="@grafanaUrl/d/mfp-macros" target="_blank" class="dashboard-card">
+            <div class="dc-icon">🥗</div>
+            <div class="dc-title">Macronutrients</div>
+            <div class="dc-desc">Protein, carbs, and fat breakdown over time</div>
+            <div class="dc-arrow">→</div>
+        </a>
+        <a href="@grafanaUrl/d/mfp-exercise" target="_blank" class="dashboard-card">
+            <div class="dc-icon">🏃</div>
+            <div class="dc-title">Exercise</div>
+            <div class="dc-desc">Calories burned, workout frequency, session duration</div>
+            <div class="dc-arrow">→</div>
+        </a>
+        <a href="@grafanaUrl/d/mfp-weight" target="_blank" class="dashboard-card">
+            <div class="dc-icon">📉</div>
+            <div class="dc-title">Weight Trend</div>
+            <div class="dc-desc">Weight history with moving average and trend line</div>
+            <div class="dc-arrow">→</div>
+        </a>
+        <a href="@grafanaUrl" target="_blank" class="dashboard-card dashboard-card--all">
+            <div class="dc-icon">◈</div>
+            <div class="dc-title">All Dashboards</div>
+            <div class="dc-desc">Open Grafana to explore all available dashboards</div>
+            <div class="dc-arrow">↗</div>
+        </a>
+    </div>
+</section>
+
+<!-- Import History -->
+@if (imports?.Any() == true)
+{
+    <section class="history-section">
+        <div class="section-header">
+            <h2>Recent Imports</h2>
+        </div>
+        <div class="history-table-wrap">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Type</th>
+                        <th>Rows</th>
+                        <th>Status</th>
+                        <th>Imported</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var import in imports)
+                    {
+                        <tr>
+                            <td class="td-filename">@import.FileName</td>
+                            <td><span class="badge badge-type">@import.FileType</span></td>
+                            <td>@import.RowsImported.ToString("N0")</td>
+                            <td>
+                                <span class="badge @(import.Success ? "badge-ok" : "badge-err")">
+                                    @(import.Success ? "✓ OK" : "✗ Error")
+                                </span>
+                            </td>
+                            <td class="td-date">@import.ImportedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}

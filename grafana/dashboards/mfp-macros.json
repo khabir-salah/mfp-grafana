@@ -1,0 +1,159 @@
+{
+  "uid": "mfp-macros",
+  "title": "MFP — Macronutrients",
+  "description": "Protein, carbohydrates, and fat breakdown over time",
+  "tags": ["mfp", "macros", "nutrition"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-30d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Avg Protein / day",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND(AVG(total_protein)::numeric, 1) AS \"Protein (g)\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Avg Carbs / day",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "fixed", "fixedColor": "yellow" } } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND(AVG(total_carbs)::numeric, 1) AS \"Carbs (g)\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Avg Fat / day",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND(AVG(total_fat)::numeric, 1) AS \"Fat (g)\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Avg Protein % of Calories",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 15 },
+              { "color": "green", "value": 25 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND(((AVG(total_protein) * 4) / NULLIF(AVG(calories_consumed), 0) * 100)::numeric, 1) AS \"Protein %\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Daily Macros Over Time",
+      "gridPos": { "x": 0, "y": 4, "w": 16, "h": 10 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "lineWidth": 2, "fillOpacity": 8 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Protein (g)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#5794F2" } }] },
+          { "matcher": { "id": "byName", "options": "Carbs (g)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FADE2A" } }] },
+          { "matcher": { "id": "byName", "options": "Fat (g)" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } }] }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT date::timestamp AS time, total_protein AS \"Protein (g)\", total_carbs AS \"Carbs (g)\", total_fat AS \"Fat (g)\" FROM daily_summaries WHERE $__timeFilter(date::timestamp) ORDER BY date;",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "piechart",
+      "title": "Avg Macro Split",
+      "gridPos": { "x": 16, "y": 4, "w": 8, "h": 10 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "pieType": "donut",
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["percent"] }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Protein" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#5794F2" } }] },
+          { "matcher": { "id": "byName", "options": "Carbs" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FADE2A" } }] },
+          { "matcher": { "id": "byName", "options": "Fat" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } }] }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT 'Protein' AS metric, ROUND(AVG(total_protein * 4)::numeric, 1) AS value FROM daily_summaries WHERE $__timeFilter(date::timestamp) UNION ALL SELECT 'Carbs', ROUND(AVG(total_carbs * 4)::numeric, 1) FROM daily_summaries WHERE $__timeFilter(date::timestamp) UNION ALL SELECT 'Fat', ROUND(AVG(total_fat * 9)::numeric, 1) FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Top Foods by Calories",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "sortBy": [{ "displayName": "Total Calories", "desc": true }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT food_name AS \"Food\", COUNT(*) AS \"Times Logged\", ROUND(AVG(calories)::numeric, 0) AS \"Avg Calories\", ROUND(SUM(calories)::numeric, 0) AS \"Total Calories\", ROUND(AVG(protein)::numeric, 1) AS \"Avg Protein (g)\", ROUND(AVG(carbohydrates)::numeric, 1) AS \"Avg Carbs (g)\", ROUND(AVG(fat)::numeric, 1) AS \"Avg Fat (g)\" FROM food_entries WHERE $__timeFilter(date::timestamp) GROUP BY food_name ORDER BY SUM(calories) DESC LIMIT 25;",
+          "format": "table"
+        }
+      ]
+    }
+  ]
+}

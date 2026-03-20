@@ -1,0 +1,167 @@
+{
+  "uid": "mfp-weight",
+  "title": "MFP — Weight Trend",
+  "description": "Weight history with 7-day moving average",
+  "tags": ["mfp", "weight", "trend"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-90d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Current Weight",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1 } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT date::timestamp AS time, weight AS \"Weight\" FROM weight_entries ORDER BY date DESC LIMIT 1;",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total Change",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "green", "value": -100 },
+              { "color": "yellow", "value": 0 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND((MAX(weight) FILTER (WHERE date = (SELECT MAX(date) FROM weight_entries)) - MAX(weight) FILTER (WHERE date = (SELECT MIN(date) FROM weight_entries)))::numeric, 1) AS \"Change\" FROM weight_entries;",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Lowest Weight",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "fixed", "fixedColor": "green" } } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, MIN(weight) AS \"Lowest\" FROM weight_entries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Highest Weight",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "fixed", "fixedColor": "orange" } } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, MAX(weight) AS \"Highest\" FROM weight_entries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Weight History with 7-Day Moving Average",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 12 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "decimals": 1, "custom": { "lineWidth": 2, "fillOpacity": 5 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Weight" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#00d4aa" } },
+              { "id": "custom.fillOpacity", "value": 10 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "7-Day Avg" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#FF9830" } },
+              { "id": "custom.lineWidth", "value": 3 },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT date::timestamp AS time, weight AS \"Weight\", ROUND(AVG(weight) OVER (ORDER BY date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)::numeric, 2) AS \"7-Day Avg\" FROM weight_entries WHERE $__timeFilter(date::timestamp) ORDER BY date;",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Weight Log",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "sortBy": [{ "displayName": "Date", "desc": true }] },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT date AS \"Date\", weight AS \"Weight\", unit AS \"Unit\", ROUND((weight - LAG(weight) OVER (ORDER BY date))::numeric, 2) AS \"Change\" FROM weight_entries WHERE $__timeFilter(date::timestamp) ORDER BY date DESC LIMIT 30;",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Weight vs Net Calories (correlation)",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "fieldConfig": {
+        "defaults": { "custom": { "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Weight" }, "properties": [{ "id": "unit", "value": "short" }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "#00d4aa" } }, { "id": "custom.axisPlacement", "value": "left" }] },
+          { "matcher": { "id": "byName", "options": "Net Calories" }, "properties": [{ "id": "unit", "value": "kcal" }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "#F2CC0C" } }, { "id": "custom.axisPlacement", "value": "right" }] }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT w.date::timestamp AS time, w.weight AS \"Weight\", ds.calories_consumed - ds.calories_burned AS \"Net Calories\" FROM weight_entries w LEFT JOIN daily_summaries ds ON w.date = ds.date WHERE $__timeFilter(w.date::timestamp) ORDER BY w.date;",
+          "format": "time_series"
+        }
+      ]
+    }
+  ]
+}

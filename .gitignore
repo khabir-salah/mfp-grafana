@@ -1,0 +1,33 @@
+# Environment / secrets
+.env
+
+# Build output
+src/MfpDashboard/bin/
+src/MfpDashboard/obj/
+
+# SSL certs
+nginx/ssl/*.pem
+nginx/ssl/*.crt
+nginx/ssl/*.key
+
+# Backups
+backups/
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.user
+
+# Docker volumes (if ever mapped locally)
+postgres-data/
+grafana-data/
+app-uploads/
+app-logs/
+
+# macOS / Windows artifacts
+.DS_Store
+Thumbs.db

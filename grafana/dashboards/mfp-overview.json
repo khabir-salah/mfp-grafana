@@ -1,0 +1,191 @@
+{
+  "uid": "mfp-overview",
+  "title": "MFP — Overview",
+  "description": "Daily calorie intake vs goal, net calorie balance",
+  "tags": ["mfp", "calories", "overview"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "5m",
+  "time": { "from": "now-30d", "to": "now" },
+  "timepicker": {},
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Avg Daily Calories",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kcal",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null },
+              { "color": "green", "value": 1500 },
+              { "color": "orange", "value": 2500 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND(AVG(calories_consumed)::numeric, 0) AS \"Avg Calories\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Days Tracked",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, COUNT(DISTINCT date) AS \"Days\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Avg Net Calories",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "none"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kcal",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, ROUND(AVG(calories_consumed - calories_burned)::numeric, 0) AS \"Net Calories\" FROM daily_summaries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total Food Entries",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "value",
+        "graphMode": "none"
+      },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT NOW() AS time, COUNT(*) AS \"Food Entries\" FROM food_entries WHERE $__timeFilter(date::timestamp);",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Daily Calories: Consumed vs Goal",
+      "gridPos": { "x": 0, "y": 4, "w": 24, "h": 9 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "kcal", "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Goal" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } },
+              { "id": "custom.lineStyle", "value": { "dash": [8, 4], "fill": "dash" } },
+              { "id": "custom.fillOpacity", "value": 0 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Consumed" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#00d4aa" } }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT date::timestamp AS time, calories_consumed AS \"Consumed\", NULLIF(calories_goal, 0) AS \"Goal\" FROM daily_summaries WHERE $__timeFilter(date::timestamp) ORDER BY date;",
+          "format": "time_series"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Net Calorie Balance (Consumed − Burned)",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+      "options": {
+        "xTickLabelRotation": -45,
+        "tooltip": { "mode": "single" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kcal",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 700 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "mfp-postgres-ds" },
+          "rawSql": "SELECT date::timestamp AS time, ROUND((calories_consumed - calories_burned)::numeric, 0) AS \"Net Calories\" FROM daily_summaries WHERE $__timeFilter(date::timestamp) ORDER BY date;",
+          "format": "time_series"
+        }
+      ]
+    }
+  ]
+}
