@@ -1,14 +1,11 @@
+
+
 using Dapper;
 using MfpDashboard.Data;
 using MfpDashboard.Models;
 using Npgsql;
 
 namespace MfpDashboard.Services;
-
-public interface IIngestionService
-{
-    Task<UploadResult> IngestAsync(ParsedCsvData data, string fileName);
-}
 
 public class IngestionService : IIngestionService
 {

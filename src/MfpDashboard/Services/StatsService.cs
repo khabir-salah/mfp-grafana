@@ -1,3 +1,5 @@
+
+
 using Dapper;
 using MfpDashboard.Data;
 using MfpDashboard.Models;
@@ -5,22 +7,6 @@ using Npgsql;
 
 namespace MfpDashboard.Services;
 
-public interface IStatsService
-{
-    Task<DashboardStats> GetStatsAsync();
-    Task<List<ImportLogEntry>> GetRecentImportsAsync(int count = 10);
-}
-
-public class ImportLogEntry
-{
-    public long Id { get; set; }
-    public string FileName { get; set; } = string.Empty;
-    public string FileType { get; set; } = string.Empty;
-    public int RowsImported { get; set; }
-    public bool Success { get; set; }
-    public DateTime ImportedAt { get; set; }
-    public string? Warnings { get; set; }
-}
 
 public class StatsService : IStatsService
 {

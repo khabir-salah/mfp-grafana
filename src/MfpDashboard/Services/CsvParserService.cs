@@ -1,33 +1,10 @@
+namespace MfpDashboard.Services;
+
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 using MfpDashboard.Models;
 
-namespace MfpDashboard.Services;
-
-public interface ICsvParserService
-{
-    Task<ParsedCsvData> ParseAsync(Stream fileStream, string fileName);
-}
-
-public class ParsedCsvData
-{
-    public List<FoodEntry> FoodEntries { get; set; } = new();
-    public List<ExerciseEntry> ExerciseEntries { get; set; } = new();
-    public List<WeightEntry> WeightEntries { get; set; } = new();
-    public List<DailySummary> DailySummaries { get; set; } = new();
-    public List<string> Warnings { get; set; } = new();
-    public CsvFileType DetectedType { get; set; }
-}
-
-public enum CsvFileType
-{
-    Food,
-    Exercise,
-    Measurements,
-    NutritionSummary,
-    Unknown
-}
 
 public class CsvParserService : ICsvParserService
 {
