@@ -1,3 +1,5 @@
+using MfpDashboard.Models.Entities;
+
 namespace MfpDashboard.Services;
 
 

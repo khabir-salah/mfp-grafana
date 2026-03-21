@@ -3,8 +3,8 @@ namespace MfpDashboard.Services;
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
-using MfpDashboard.Models;
-
+using MfpDashboard.Models.CSV;
+using MfpDashboard.Models.Entities;
 
 public class CsvParserService : ICsvParserService
 {

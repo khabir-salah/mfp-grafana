@@ -3,6 +3,7 @@
 using Dapper;
 using MfpDashboard.Data;
 using MfpDashboard.Models;
+using MfpDashboard.Models.Entities;
 using Npgsql;
 
 namespace MfpDashboard.Services;

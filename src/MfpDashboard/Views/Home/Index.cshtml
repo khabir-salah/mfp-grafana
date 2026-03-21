@@ -1,6 +1,6 @@
 @{
     ViewData["Title"] = "Dashboard";
-    var stats = ViewBag.Stats as MfpDashboard.Models.DashboardStats;
+    var stats = ViewBag.Stats as MfpDashboard.Models.Entities.DashboardStats;
     var imports = ViewBag.RecentImports as List<MfpDashboard.Services.ImportLogEntry>;
     var grafanaUrl = ViewBag.GrafanaUrl as string ?? "http://localhost:3000";
 }

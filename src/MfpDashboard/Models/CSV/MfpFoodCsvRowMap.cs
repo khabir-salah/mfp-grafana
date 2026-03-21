@@ -1,3 +1,5 @@
+using CsvHelper.Configuration;
+
 namespace MfpDashboard.Models.CSV;
 
 public sealed class MfpFoodCsvRowMap : ClassMap<MfpFoodCsvRow>

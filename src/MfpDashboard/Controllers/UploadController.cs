@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using MfpDashboard.Models;
 using MfpDashboard.Services;
+using MfpDashboard.Models.Entities;
 
 namespace MfpDashboard.Controllers;
 
