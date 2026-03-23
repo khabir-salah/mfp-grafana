@@ -19,29 +19,59 @@ public class DatabaseInitializer
     {
         _logger.LogInformation("Initializing database schema...");
 
-        // Retry logic for Docker startup ordering
         var retries = 5;
+
         while (retries > 0)
         {
             try
             {
-                await using var connection = new NpgsqlConnection(_connectionString);
-                await connection.OpenAsync();
-                await CreateTablesAsync(connection);
+                var builder = new NpgsqlConnectionStringBuilder(_connectionString);
+                var databaseName = builder.Database;
+
+                builder.Database = "postgres";
+
+                await using (var masterConnection = new NpgsqlConnection(builder.ConnectionString))
+                {
+                    await masterConnection.OpenAsync();
+
+                    var existsCmd = new NpgsqlCommand(
+                        "SELECT 1 FROM pg_database WHERE datname = @dbName",
+                        masterConnection);
+
+                    existsCmd.Parameters.AddWithValue("dbName", databaseName);
+
+                    var exists = await existsCmd.ExecuteScalarAsync();
+
+                    if (exists == null)
+                    {
+                        _logger.LogInformation("Database '{DbName}' does not exist. Creating...", databaseName);
+
+                        var createCmd = new NpgsqlCommand(
+                            $"CREATE DATABASE \"{databaseName}\"",
+                            masterConnection);
+
+                        await createCmd.ExecuteNonQueryAsync();
+
+                        _logger.LogInformation("Database '{DbName}' created successfully.", databaseName);
+                    }
+                }
+
+                // Step 4: Connect to actual DB
+                await using (var connection = new NpgsqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    await CreateTablesAsync(connection);
+                }
+
                 _logger.LogInformation("Database initialized successfully.");
                 return;
-            }
-            catch (Npgsql.PostgresException ex)
-            {
-                // This will tell you if it's "Invalid Password", "Database does not exist", etc.
-                _logger.LogError("Postgres Error: {Message} (Code: {SqlState})", ex.Message, ex.SqlState);
-                throw;
             }
             catch (Exception ex)
             {
                 retries--;
                 _logger.LogWarning("Database not ready, retrying in 3s... ({Retries} left). Error: {Error}",
                     retries, ex.Message);
+
                 await Task.Delay(3000);
             }
         }

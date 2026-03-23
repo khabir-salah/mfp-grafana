@@ -76,13 +76,20 @@ public class StatsService : IStatsService
 
         var entries = await conn.QueryAsync<ImportLogEntry>(
             """
-            SELECT id, file_name, file_type, rows_imported, success, imported_at, warnings
+            SELECT
+                id          AS "Id",
+                file_name   AS "FileName",
+                file_type   AS "FileType",
+                rows_imported AS "RowsImported",
+                success     AS "Success",
+                imported_at AS "ImportedAt",
+                warnings    AS "Warnings"
             FROM import_log
             ORDER BY imported_at DESC
             LIMIT @Count
             """,
             new { Count = count });
-
+ 
         return entries.ToList();
     }
 }
