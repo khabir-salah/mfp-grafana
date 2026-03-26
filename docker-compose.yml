@@ -107,6 +107,7 @@
 #       - mfp-net
 
 
+
 networks:
   mfp-net:
     driver: bridge
@@ -124,16 +125,16 @@ services:
     container_name: mfp-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       ${POSTGRES_DB:-mfp_data}
-      POSTGRES_USER:     ${POSTGRES_USER:-mfp_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mfp_password}
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - mfp-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mfp_user} -d ${POSTGRES_DB:-mfp_data}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -153,8 +154,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-mfp_data};Username=${POSTGRES_USER:-mfp_user};Password=${POSTGRES_PASSWORD:-mfp_password};Pooling=true;Minimum Pool Size=2;Maximum Pool Size=20;"
-      GrafanaSettings__BaseUrl: ${GRAFANA_URL:-http://localhost:8080/grafana}
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Pooling=true;Minimum Pool Size=2;Maximum Pool Size=20;"
+      GrafanaSettings__BaseUrl: ${GRAFANA_URL:-http://localhost:3000}
       UploadSettings__UploadPath: /app/uploads
     volumes:
       - app-uploads:/app/uploads
@@ -176,17 +177,22 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:-changeme}
-      GF_SERVER_ROOT_URL: http://localhost:8080/grafana/
-      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
       GF_SECURITY_ALLOW_EMBEDDING: "true"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_PROVISIONING_ENABLED_ENV_SUBST: true
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
     networks:
       - mfp-net
     healthcheck:
